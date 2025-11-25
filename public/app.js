@@ -327,6 +327,9 @@ async function fetchTasks() {
             if (modal.classList.contains('show') && modalTitle.textContent) {
                 updateModalContent(modalTitle.textContent);
             }
+        } else {
+             // Even if data is same, re-render to update relative times (e.g. "X mins ago")
+             renderTasks(tasks);
         }
     } catch (error) {
         console.error('Error fetching tasks:', error);
