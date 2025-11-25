@@ -52,10 +52,29 @@ app.get('/api/task/:name', (req, res) => {
  * 需要 body 参数: name, total, current, log, password
  */
 app.post('/api/task', authMiddleware, (req, res) => {
-    const { name, total, current, log } = req.body;
+    let { name, total, current, log } = req.body;
 
-    if (!name || total === undefined || current === undefined) {
-        return res.status(400).json({ error: "Missing required fields: name, total, current" });
+    if (!name) {
+        return res.status(400).json({ error: "Missing required field: name" });
+    }
+
+    // 检查是否为增量更新模式（未提供 total 和 current）
+    if (total === undefined && current === undefined) {
+        const existingTask = dataManager.getTaskByName(name);
+        if (existingTask) {
+            total = existingTask.total;
+            current = existingTask.current + 1;
+            // 限制不超过总进度
+            if (current > total) {
+                current = total;
+            }
+        } else {
+            return res.status(400).json({ error: "Task not found. Provide total and current for new tasks." });
+        }
+    }
+
+    if (total === undefined || current === undefined) {
+        return res.status(400).json({ error: "Missing required fields: total, current" });
     }
 
     try {
