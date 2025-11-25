@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // 鉴权中间件
 const authMiddleware = (req, res, next) => {
-    const providedPassword = req.body.password || req.query.password || req.headers['x-password'];
+    const providedPassword = (req.body && req.body.password) || req.query.password || req.headers['x-password'];
     if (providedPassword === config.password) {
         next();
     } else {
