@@ -74,9 +74,12 @@ app.post("/api/task", authMiddleware, (req, res) => {
             current = total;
         }
     } else {
-        // 新任务：必须提供 total 和 current
-        if (total === undefined || current === undefined) {
+        // 新任务：必须提供 total
+        if (total === undefined) {
             return res.status(400).json({ error: "Task not found. Provide total and current for new tasks." });
+        }
+        if (current === undefined) {
+            current = 0;
         }
     }
 
