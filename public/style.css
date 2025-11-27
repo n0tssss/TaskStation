@@ -37,6 +37,71 @@
     --accent-gradient: linear-gradient(135deg, #2ecc71, #27ae60);
 }
 
+/* Error Status Styles */
+.task-card.status-error,
+.modal-content.status-error {
+    --accent-color: #e74c3c;
+    --accent-gradient: linear-gradient(135deg, #c0392b, #e74c3c);
+    border: 2px solid #e74c3c !important;
+}
+
+/* Card Animation: Border Pulse (Attention) - Background flash removed */
+.task-card.status-error {
+    animation: error-border-pulse 2s infinite;
+}
+
+/* Modal Animation: Pulse only */
+.modal-content.status-error {
+    animation: error-border-pulse 2s infinite;
+}
+
+@keyframes error-border-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4);
+        border-color: rgba(231, 76, 60, 0.6);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+        border-color: rgba(231, 76, 60, 1);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+        border-color: rgba(231, 76, 60, 0.6);
+    }
+}
+
+/* Log Levels */
+.log-item.level-info .log-content {
+    border-left-color: #3498db;
+    background-color: #f5faff;
+}
+
+.log-item.level-success .log-content {
+    border-left-color: #27ae60;
+    background-color: #f0f9f4;
+}
+
+.log-item.level-warning .log-content {
+    border-left-color: #f39c12;
+    background-color: #fef9e7;
+}
+
+.log-item.level-error .log-content {
+    border-left-color: #e74c3c;
+    background-color: #fdedec;
+}
+
+.log-item.level-error .log-content,
+.log-item.level-warning .log-content {
+    font-weight: 500;
+}
+
+/* Override accent color inside logs based on level */
+.log-item.level-info { --accent-color: #3498db; }
+.log-item.level-success { --accent-color: #27ae60; }
+.log-item.level-warning { --accent-color: #f39c12; }
+.log-item.level-error { --accent-color: #e74c3c; }
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-color);
@@ -250,6 +315,50 @@ input:checked + .slider:before {
     gap: 20px;
     justify-content: flex-start; /* Align left */
     padding-bottom: 40px;
+}
+
+/* Error Overlay Text */
+.error-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 10;
+    text-align: center;
+    pointer-events: none; /* Allow clicking through to open modal */
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.task-card.status-error .error-overlay {
+    opacity: 1;
+}
+
+.error-icon {
+    font-size: 2rem;
+    margin-bottom: 5px;
+    animation: pulse-icon 1s infinite alternate;
+}
+
+.error-text {
+    font-weight: 700;
+    color: #c0392b;
+    font-size: 0.9rem;
+    background: #ffecec;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #e74c3c;
+}
+
+@keyframes pulse-icon {
+    from { transform: scale(1); }
+    to { transform: scale(1.2); }
 }
 
 /* Task Card */

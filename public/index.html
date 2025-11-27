@@ -1,127 +1,333 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskStation - 任务进度看板</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header>
-        <div class="container header-content">
-            <div id="header-title-area">
-                <h1 id="site-title">TaskStation</h1>
-                <p id="site-subtitle">实时任务进度追踪</p>
-            </div>
-            <div class="controls">
-                <button id="add-task-btn" class="icon-btn primary-icon-btn" title="新增/更新任务">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                </button>
-                <button id="delete-all-btn" class="icon-btn danger-btn" title="清空所有任务">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                </button>
-                <button id="share-btn" class="icon-btn" title="复制嵌入代码">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                </button>
-                <div class="divider"></div>
-                <label class="switch">
-                    <input type="checkbox" id="auto-refresh-toggle" checked>
-                    <span class="slider round"></span>
-                </label>
-                <span class="control-label">自动刷新</span>
-            </div>
-        </div>
-    </header>
-
-    <main class="container">
-        <div id="task-list" class="task-grid">
-            <!-- 任务卡片将通过 JS 插入这里 -->
-            <div class="loading">正在加载任务数据...</div>
-        </div>
-    </main>
-
-    <footer class="container">
-        <p>&copy; <span id="current-year"></span> N0ts | <a href="https://github.com/n0tssss/TaskStation" target="_blank">TaskStation</a> on GitHub</p>
-    </footer>
-
-    <!-- 任务详情模态框 -->
-    <div id="modal" class="modal hidden">
-        <div class="modal-content">
-            <span class="close-btn" id="close-detail-btn">&times;</span>
-            <h2 id="modal-title">任务名称</h2>
-            
-            <div class="modal-progress-section">
-                <div class="progress-info">
-                    <span id="modal-stats">进度: 0 / 0</span>
-                    <span id="modal-percent">0%</span>
-                </div>
-                <div class="progress-bar-bg">
-                    <div id="modal-progress-bar" class="progress-bar-fill" style="width: 0%"></div>
-                </div>
-                <p class="meta-info">创建于: <span id="modal-created"></span> | 更新于: <span id="modal-updated"></span></p>
-            </div>
-
-            <div class="logs-section">
-                <h3>日志记录</h3>
-                <div id="modal-logs" class="logs-list">
-                    <!-- 日志列表 -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 编辑/新增任务模态框 -->
-    <div id="edit-modal" class="modal hidden" style="z-index: 150;">
-        <div class="modal-content" style="max-width: 500px;">
-            <span class="close-btn" id="close-edit-btn">&times;</span>
-            <h2>更新/新增任务</h2>
-            <form id="task-form">
-                <div class="form-group">
-                    <label for="task-name-input">任务名称</label>
-                    <input type="text" id="task-name-input" class="form-input" list="task-names-list" placeholder="输入名称或选择现有任务" required autocomplete="off">
-                    <datalist id="task-names-list">
-                        <!-- JS 填充 -->
-                    </datalist>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="task-total-input">总进度</label>
-                        <input type="number" id="task-total-input" class="form-input" min="1" placeholder="例如: 100" required>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>TaskStation - 任务进度看板</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div id="app">
+            <header>
+                <div class="container header-content">
+                    <div id="header-title-area">
+                        <h1 id="site-title">{{ config.title || 'TaskStation' }}</h1>
+                        <p id="site-subtitle">{{ config.subtitle || '实时任务进度追踪' }}</p>
                     </div>
-                    <div class="form-group">
-                        <label for="task-current-input">当前进度</label>
-                        <input type="number" id="task-current-input" class="form-input" min="0" placeholder="例如: 50" required>
+                    <div class="controls" v-if="!embedMode">
+                        <button @click="openEditModal" class="icon-btn primary-icon-btn" title="新增/更新任务">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                        <button @click="deleteAllTasks" class="icon-btn danger-btn" title="清空所有任务">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                <line x1="10" y1="11" x2="10" y2="17" />
+                                <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                        </button>
+                        <button @click="share" class="icon-btn" id="share-btn" title="复制嵌入代码">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                                <polyline points="16 6 12 2 8 6" />
+                                <line x1="12" y1="2" x2="12" y2="15" />
+                            </svg>
+                        </button>
+                        <div class="divider"></div>
+                        <label class="switch">
+                            <input type="checkbox" v-model="config.autoRefresh.enabled" @change="toggleAutoRefresh" />
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="control-label">自动刷新</span>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="task-log-input">更新日志 (可选)</label>
-                    <textarea id="task-log-input" class="form-input" rows="3" placeholder="本次更新的备注信息..."></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" id="cancel-edit-btn" class="btn secondary-btn">取消</button>
-                    <button type="submit" class="btn primary-btn">提交</button>
-                </div>
-            </form>
-        </div>
-    </div>
+            </header>
 
-    <!-- 密码确认模态框 -->
-    <div id="password-modal" class="modal hidden" style="z-index: 200;">
-        <div class="modal-content" style="max-width: 400px;">
-            <h3>需要鉴权</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 15px;">执行此操作需要输入管理员密码。</p>
-            <input type="password" id="password-input" class="password-input" placeholder="请输入密码">
-            <label class="remember-me">
-                <input type="checkbox" id="remember-password" checked> 记住密码
-            </label>
-            <div class="modal-actions">
-                <button id="cancel-password-btn" class="btn secondary-btn">取消</button>
-                <button id="confirm-password-btn" class="btn primary-btn">确认</button>
+            <main class="container">
+                <div class="task-grid">
+                    <div v-if="tasks.length === 0" class="loading">暂无任务，请通过 API 添加任务</div>
+                    <div
+                        v-for="task in sortedTasks"
+                        :key="task.name"
+                        class="task-card"
+                        :class="[getStatusClass(task), isPinned(task.name) ? 'pinned' : '', isNew(task.name) ? 'new-task' : '']"
+                        @click="openTaskDetail(task)">
+                        <div v-if="task.state === 'error'" class="error-overlay">
+                            <div class="error-icon">⚠️</div>
+                            <div class="error-text">异常！点击查看</div>
+                        </div>
+
+                        <div class="task-actions" @click.stop v-if="!embedMode">
+                            <button
+                                class="action-btn"
+                                :class="{ active: isPinned(task.name) }"
+                                :title="isPinned(task.name) ? '取消置顶' : '置顶任务'"
+                                @click="togglePin(task.name)">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                                    <polyline points="5 12 12 5 19 12"></polyline>
+                                </svg>
+                            </button>
+                            <button
+                                class="action-btn"
+                                :class="{ active: isSubscribed(task.name) }"
+                                :title="isSubscribed(task.name) ? '取消提醒' : '开启提醒'"
+                                @click="toggleSubscribe(task.name)">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                            </button>
+                            <button class="action-btn delete-btn" title="删除任务" @click="deleteTask(task.name)">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path
+                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    <line x1="10" y1="11" x2="10" y2="17" />
+                                    <line x1="14" y1="11" x2="14" y2="17" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="task-header">
+                            <h3 class="task-title">{{ task.name }}</h3>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div
+                                class="progress-bar-fill"
+                                :style="{ width: calculatePercent(task.current, task.total) + '%' }"></div>
+                        </div>
+                        <div class="task-stats">
+                            <span>{{ task.current }} / {{ task.total }}</span>
+                            <span class="stats-percent">{{ calculatePercent(task.current, task.total) }}%</span>
+                        </div>
+                        <div class="task-times">
+                            <span>创建于 {{ smartTimeFormat(task.createdAt) }}</span>
+                            <span>{{ formatRelativeTime(task.updatedAt) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="container" v-if="!embedMode">
+                <p>
+                    &copy; <span id="current-year">{{ currentYear }}</span> N0ts |
+                    <a href="https://github.com/n0tssss/TaskStation" target="_blank">TaskStation</a> on GitHub
+                </p>
+            </footer>
+
+            <!-- 任务详情模态框 -->
+            <div
+                class="modal"
+                :class="{ show: showDetailModal, hidden: !showDetailModal }"
+                @click.self="closeDetailModal">
+                <div class="modal-content" :class="currentTask ? getStatusClass(currentTask) : ''">
+                    <span class="close-btn" @click="closeDetailModal">&times;</span>
+                    <h2 v-if="currentTask">{{ currentTask.name }}</h2>
+
+                    <div class="modal-progress-section" v-if="currentTask">
+                        <div class="progress-info">
+                            <span>进度: {{ currentTask.current }} / {{ currentTask.total }}</span>
+                            <span>{{ calculatePercent(currentTask.current, currentTask.total) }}%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div
+                                class="progress-bar-fill"
+                                :style="{ width: calculatePercent(currentTask.current, currentTask.total) + '%' }"></div>
+                        </div>
+                        <p class="meta-info">
+                            创建于: {{ smartTimeFormat(currentTask.createdAt) }} | 更新于: {{
+                            smartTimeFormat(currentTask.updatedAt) }}
+                        </p>
+                    </div>
+
+                    <div class="logs-section" v-if="currentTask">
+                        <h3>日志记录</h3>
+                        <div class="logs-list">
+                            <p
+                                v-if="!currentTask.logs || currentTask.logs.length === 0"
+                                style="color: #999; text-align: center">
+                                暂无日志
+                            </p>
+                            <div v-for="log in sortedLogs" class="log-item" :class="'level-' + (log.level || 'info')">
+                                <div class="log-time">{{ smartTimeFormat(log.time) }}</div>
+                                <div class="log-content">
+                                    {{ log.content }}
+                                    <span
+                                        v-if="log.current !== undefined"
+                                        class="log-progress-badge"
+                                        style="
+                                            color: var(--accent-color);
+                                            font-weight: bold;
+                                            font-size: 0.85em;
+                                            margin-left: 8px;
+                                        "
+                                        >(进度: {{ log.current }}/{{ log.total }} - {{ calculatePercent(log.current,
+                                        log.total) }}%)</span
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 编辑/新增任务模态框 -->
+            <div
+                class="modal"
+                :class="{ show: showEditModal, hidden: !showEditModal }"
+                style="z-index: 150"
+                @click.self="closeEditModal">
+                <div class="modal-content" style="max-width: 500px">
+                    <span class="close-btn" @click="closeEditModal">&times;</span>
+                    <h2>更新/新增任务</h2>
+                    <form @submit.prevent="submitTask">
+                        <div class="form-group">
+                            <label for="task-name-input">任务名称</label>
+                            <input
+                                type="text"
+                                v-model="editForm.name"
+                                @input="onTaskNameInput"
+                                class="form-input"
+                                list="task-names-list"
+                                placeholder="输入名称或选择现有任务"
+                                required
+                                autocomplete="off" />
+                            <datalist id="task-names-list">
+                                <option v-for="task in tasks" :value="task.name"></option>
+                            </datalist>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="task-total-input">总进度</label>
+                                <input
+                                    type="number"
+                                    v-model.number="editForm.total"
+                                    class="form-input"
+                                    min="1"
+                                    placeholder="例如: 100"
+                                    required />
+                            </div>
+                            <div class="form-group">
+                                <label for="task-current-input">当前进度</label>
+                                <input
+                                    type="number"
+                                    v-model.number="editForm.current"
+                                    class="form-input"
+                                    min="0"
+                                    placeholder="例如: 50"
+                                    required />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-state-input">状态</label>
+                            <select v-model="editForm.state" class="form-input" id="task-state-input">
+                                <option value="info">正常 (Info)</option>
+                                <option value="success">成功 (Success)</option>
+                                <option value="warning">警告 (Warning)</option>
+                                <option value="error">异常 (Error)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-log-input">更新日志 (可选)</label>
+                            <textarea
+                                v-model="editForm.log"
+                                class="form-input"
+                                rows="3"
+                                placeholder="本次更新的备注信息..."></textarea>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" @click="closeEditModal" class="btn secondary-btn">取消</button>
+                            <button type="submit" class="btn primary-btn">提交</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 密码确认模态框 -->
+            <div
+                class="modal"
+                :class="{ show: showPasswordModal, hidden: !showPasswordModal }"
+                style="z-index: 200"
+                @click.self="closePasswordModal">
+                <div class="modal-content" style="max-width: 400px">
+                    <h3>需要鉴权</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px">执行此操作需要输入管理员密码。</p>
+                    <input
+                        type="password"
+                        v-model="passwordInput"
+                        ref="passwordInputRef"
+                        class="password-input"
+                        placeholder="请输入密码"
+                        @keyup.enter="confirmPassword" />
+                    <label class="remember-me"> <input type="checkbox" v-model="rememberPassword" /> 记住密码 </label>
+                    <div class="modal-actions">
+                        <button @click="closePasswordModal" class="btn secondary-btn">取消</button>
+                        <button @click="confirmPassword" class="btn primary-btn">确认</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
+    <!-- Vue 已通过 ES Module 导入，无需 script 标签引入 -->
     <script src="lib/confetti.browser.min.js"></script>
-    <script src="app.js"></script>
-</body>
+    <script type="module" src="app.js"></script>
+    </body>
 </html>

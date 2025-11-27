@@ -1,1 +1,40 @@
-{}
+{
+  "项目开发": {
+    "name": "项目开发",
+    "total": 9999,
+    "current": 8888,
+    "state": "error",
+    "logs": [
+      {
+        "time": "2025-11-27T04:32:01.938Z",
+        "content": "完成后端接口开发",
+        "current": 8888,
+        "total": 9999,
+        "level": "success"
+      },
+      {
+        "time": "2025-11-27T04:32:28.435Z",
+        "content": "完成后端接口开发",
+        "current": 8888,
+        "total": 9999,
+        "level": "info"
+      },
+      {
+        "time": "2025-11-27T04:32:36.413Z",
+        "content": "完成后端接口开发",
+        "current": 8888,
+        "total": 9999,
+        "level": "warning"
+      },
+      {
+        "time": "2025-11-27T04:32:43.794Z",
+        "content": "完成后端接口开发",
+        "current": 8888,
+        "total": 9999,
+        "level": "error"
+      }
+    ],
+    "createdAt": "2025-11-27T04:32:01.938Z",
+    "updatedAt": "2025-11-27T04:32:43.794Z"
+  }
+}

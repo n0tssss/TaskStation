@@ -52,7 +52,7 @@ app.get("/api/task/:name", (req, res) => {
  * 需要 body 参数: name, total, current, log, password
  */
 app.post("/api/task", authMiddleware, (req, res) => {
-    let { name, total, current, log } = req.body;
+    let { name, total, current, log, state } = req.body;
 
     if (!name) {
         return res.status(400).json({ error: "Missing required field: name" });
@@ -84,7 +84,7 @@ app.post("/api/task", authMiddleware, (req, res) => {
     }
 
     try {
-        const updatedTask = dataManager.upsertTask(name, total, current, log);
+        const updatedTask = dataManager.upsertTask(name, total, current, log, state);
         res.json({ success: true, task: updatedTask });
     } catch (err) {
         res.status(500).json({ error: "Internal server error" });
