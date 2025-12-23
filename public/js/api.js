@@ -13,13 +13,22 @@ export const ApiService = {
     },
 
     /**
-     * 获取任务列表（分页）
+     * 获取所有任务
+     */
+    async getTasks() {
+        const response = await fetch(`${API_BASE}/tasks`);
+        return await response.json();
+    },
+    
+    /**
+     * 获取任务日志（分页）
+     * @param {string} taskName 任务名称
      * @param {number} page 页码（默认1）
      * @param {number} pageSize 每页数量（默认100）
      * @returns {Promise<{data: Array, pagination: {page, pageSize, total, totalPages}}>}
      */
-    async getTasks(page = 1, pageSize = 100) {
-        const response = await fetch(`${API_BASE}/tasks?page=${page}&pageSize=${pageSize}`);
+    async getTaskLogs(taskName, page = 1, pageSize = 100) {
+        const response = await fetch(`${API_BASE}/task/${encodeURIComponent(taskName)}/logs?page=${page}&pageSize=${pageSize}`);
         return await response.json();
     },
 

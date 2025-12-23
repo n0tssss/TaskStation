@@ -874,3 +874,46 @@ input:checked + .slider:before {
     color: #95a5a6;
     font-size: 0.85rem;
 }
+
+/* 
+   ============================
+   日志区域样式
+   ============================
+*/
+.logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.logs-header h3 {
+    margin: 0;
+}
+
+.logs-count {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: #f0f2f5;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.logs-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.logs-pagination .pagination-btn {
+    width: 32px;
+    height: 32px;
+}
+
+.logs-pagination .pagination-info {
+    font-size: 0.85rem;
+}

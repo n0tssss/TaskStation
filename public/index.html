@@ -164,36 +164,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- 分页组件 -->
-                <div class="pagination-container" v-if="pagination.totalPages > 1">
-                    <div class="pagination">
-                        <button 
-                            class="pagination-btn" 
-                            @click="prevPage" 
-                            :disabled="currentPage <= 1"
-                            title="上一页">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="15 18 9 12 15 6"></polyline>
-                            </svg>
-                        </button>
-                        
-                        <span class="pagination-info">
-                            第 <strong>{{ currentPage }}</strong> / {{ pagination.totalPages }} 页
-                            <span class="pagination-total">（共 {{ pagination.total }} 条）</span>
-                        </span>
-                        
-                        <button 
-                            class="pagination-btn" 
-                            @click="nextPage" 
-                            :disabled="currentPage >= pagination.totalPages"
-                            title="下一页">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
             </main>
 
             <footer class="container" v-if="!embedMode">
@@ -229,14 +199,21 @@
                     </div>
 
                     <div class="logs-section" v-if="currentTask">
-                        <h3>日志记录</h3>
+                        <div class="logs-header">
+                            <h3>日志记录</h3>
+                            <span class="logs-count" v-if="logPagination.total > 0">共 {{ logPagination.total }} 条</span>
+                        </div>
+                        
                         <div class="logs-list">
+                            <p v-if="logsLoading" style="color: #999; text-align: center">
+                                加载中...
+                            </p>
                             <p
-                                v-if="!currentTask.logs || currentTask.logs.length === 0"
+                                v-else-if="sortedLogs.length === 0"
                                 style="color: #999; text-align: center">
                                 暂无日志
                             </p>
-                            <div v-for="log in sortedLogs" class="log-item" :class="'level-' + (log.level || 'info')">
+                            <div v-else v-for="log in sortedLogs" class="log-item" :class="'level-' + (log.level || 'info')">
                                 <div class="log-time">{{ smartTimeFormat(log.time) }}</div>
                                 <div class="log-content">
                                     {{ log.content }}
@@ -254,6 +231,33 @@
                                     >
                                 </div>
                             </div>
+                        </div>
+                        
+                        <!-- 日志分页组件 -->
+                        <div class="logs-pagination" v-if="logPagination.totalPages > 1">
+                            <button 
+                                class="pagination-btn" 
+                                @click="prevLogPage" 
+                                :disabled="logPage <= 1"
+                                title="上一页">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+                            
+                            <span class="pagination-info">
+                                第 <strong>{{ logPage }}</strong> / {{ logPagination.totalPages }} 页
+                            </span>
+                            
+                            <button 
+                                class="pagination-btn" 
+                                @click="nextLogPage" 
+                                :disabled="logPage >= logPagination.totalPages"
+                                title="下一页">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -22,29 +22,50 @@ const authMiddleware = (req, res, next) => {
 };
 
 /**
- * API: 获取任务列表（支持分页）
+ * API: 获取所有任务列表
  * 不需要密码，公开查询
- * Query参数: page (默认1), pageSize (默认100)
+ * 注意：为了性能，每个任务只返回最新10条日志
  */
 app.get("/api/tasks", (req, res) => {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const pageSize = Math.max(1, Math.min(500, parseInt(req.query.pageSize) || 100));
-    
     const tasks = dataManager.getTasks();
     // 转换为数组返回，方便前端处理
     const taskList = Object.values(tasks).sort((a, b) => {
         // 按更新时间倒序排列
         return new Date(b.updatedAt) - new Date(a.updatedAt);
-    });
+    }).map(task => ({
+        ...task,
+        // 只返回最新10条日志用于预览，完整日志通过分页接口获取
+        logs: (task.logs || []).slice(-10),
+        totalLogs: (task.logs || []).length
+    }));
+    res.json(taskList);
+});
+
+/**
+ * API: 获取任务日志（分页）
+ * Query参数: page (默认1), pageSize (默认100)
+ */
+app.get("/api/task/:name/logs", (req, res) => {
+    const task = dataManager.getTaskByName(req.params.name);
+    if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+    }
     
-    const total = taskList.length;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const pageSize = Math.max(1, Math.min(500, parseInt(req.query.pageSize) || 100));
+    
+    const allLogs = task.logs || [];
+    // 日志按时间倒序排列（最新的在前）
+    const sortedLogs = [...allLogs].reverse();
+    
+    const total = sortedLogs.length;
     const totalPages = Math.ceil(total / pageSize);
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedList = taskList.slice(startIndex, endIndex);
+    const paginatedLogs = sortedLogs.slice(startIndex, endIndex);
     
     res.json({
-        data: paginatedList,
+        data: paginatedLogs,
         pagination: {
             page,
             pageSize,

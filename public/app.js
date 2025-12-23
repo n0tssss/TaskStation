@@ -32,14 +32,16 @@ createApp({
         // 当前选中任务
         const currentTask = ref(null);
         
-        // 分页状态
-        const currentPage = ref(1);
-        const pagination = ref({
+        // 日志分页状态
+        const currentLogs = ref([]);
+        const logPage = ref(1);
+        const logPagination = ref({
             page: 1,
             pageSize: 100,
             total: 0,
             totalPages: 0
         });
+        const logsLoading = ref(false);
 
         // 编辑表单
         const editForm = ref({
@@ -82,10 +84,9 @@ createApp({
             });
         });
 
-        // 计算属性：排序后的日志列表
+        // 计算属性：当前日志列表（已从API获取并排序）
         const sortedLogs = computed(() => {
-            if (!currentTask.value || !currentTask.value.logs) return [];
-            return [...currentTask.value.logs].sort((a, b) => new Date(b.time) - new Date(a.time));
+            return currentLogs.value;
         });
 
         // 生命周期钩子
@@ -145,15 +146,11 @@ createApp({
         };
 
         /**
-         * 获取任务列表（分页）
-         * @param {number} page 可选，指定页码
+         * 获取任务列表
          */
-        const fetchTasks = async (page = currentPage.value) => {
+        const fetchTasks = async () => {
             try {
-                const result = await ApiService.getTasks(page, 100);
-                const newTasks = result.data;
-                pagination.value = result.pagination;
-                currentPage.value = result.pagination.page;
+                const newTasks = await ApiService.getTasks();
 
                 if (JSON.stringify(newTasks) !== JSON.stringify(tasks.value)) {
                     checkTaskUpdates(newTasks);
@@ -171,30 +168,46 @@ createApp({
         };
         
         /**
-         * 跳转到指定页
+         * 获取任务日志（分页）
          */
-        const goToPage = (page) => {
-            if (page >= 1 && page <= pagination.value.totalPages) {
-                currentPage.value = page;
-                fetchTasks(page);
+        const fetchLogs = async (taskName, page = 1) => {
+            logsLoading.value = true;
+            try {
+                const result = await ApiService.getTaskLogs(taskName, page, 100);
+                currentLogs.value = result.data;
+                logPagination.value = result.pagination;
+                logPage.value = result.pagination.page;
+            } catch (error) {
+                console.error("获取日志失败:", error);
+            } finally {
+                logsLoading.value = false;
             }
         };
         
         /**
-         * 上一页
+         * 日志跳转到指定页
          */
-        const prevPage = () => {
-            if (currentPage.value > 1) {
-                goToPage(currentPage.value - 1);
+        const goToLogPage = (page) => {
+            if (currentTask.value && page >= 1 && page <= logPagination.value.totalPages) {
+                fetchLogs(currentTask.value.name, page);
             }
         };
         
         /**
-         * 下一页
+         * 日志上一页
          */
-        const nextPage = () => {
-            if (currentPage.value < pagination.value.totalPages) {
-                goToPage(currentPage.value + 1);
+        const prevLogPage = () => {
+            if (logPage.value > 1) {
+                goToLogPage(logPage.value - 1);
+            }
+        };
+        
+        /**
+         * 日志下一页
+         */
+        const nextLogPage = () => {
+            if (logPage.value < logPagination.value.totalPages) {
+                goToLogPage(logPage.value + 1);
             }
         };
 
@@ -321,11 +334,18 @@ createApp({
         const openTaskDetail = (task) => {
             currentTask.value = task;
             showDetailModal.value = true;
+            // 重置日志分页状态并加载第一页日志
+            logPage.value = 1;
+            currentLogs.value = [];
+            fetchLogs(task.name, 1);
         };
 
         const closeDetailModal = () => {
             showDetailModal.value = false;
             currentTask.value = null;
+            // 清空日志
+            currentLogs.value = [];
+            logPage.value = 1;
         };
 
         const openEditModal = () => {
@@ -397,9 +417,10 @@ createApp({
             currentTask,
             sortedLogs,
             
-            // 分页状态
-            currentPage,
-            pagination,
+            // 日志分页状态
+            logPage,
+            logPagination,
+            logsLoading,
 
             // 弹窗状态
             showDetailModal,
@@ -439,10 +460,10 @@ createApp({
             closePasswordModal,
             toggleAutoRefresh,
             
-            // 分页动作
-            goToPage,
-            prevPage,
-            nextPage
+            // 日志分页动作
+            goToLogPage,
+            prevLogPage,
+            nextLogPage
         };
     }
 }).mount("#app");
