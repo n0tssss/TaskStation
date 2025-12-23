@@ -15,12 +15,21 @@ export const calculatePercent = (current, total) => {
 /**
  * 智能时间格式化
  * @param {string} isoString ISO 时间字符串
+ * @param {boolean} brief 是否简略显示（超过一周只显示年月日）
  * @returns {string} 格式化后的时间
  */
-export const smartTimeFormat = (isoString) => {
+export const smartTimeFormat = (isoString, brief = false) => {
     if (!isoString) return '-';
     const date = new Date(isoString);
     const now = new Date();
+    
+    // 计算距今天数
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    
+    // 如果是简略模式且超过7天，只显示年月日
+    if (brief && diffDays >= 7) {
+        return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+    }
     
     const isToday = date.getDate() === now.getDate() && 
                     date.getMonth() === now.getMonth() && 
@@ -37,6 +46,11 @@ export const smartTimeFormat = (isoString) => {
     if (isToday) return `今天 ${timeStr}`;
     if (isYesterday) return `昨天 ${timeStr}`;
     
+    // 超过一周但在简略模式下已处理，这里是非简略模式
+    if (diffDays >= 7) {
+        return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${timeStr}`;
+    }
+    
     const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
     const weekDay = weekDays[date.getDay()];
     const monthDay = `${date.getMonth() + 1}月${date.getDate()}日`;
@@ -46,12 +60,13 @@ export const smartTimeFormat = (isoString) => {
 /**
  * 格式化相对时间
  * @param {string} isoString ISO 时间字符串
+ * @param {Date} currentTime 当前时间（可选，用于实时更新）
  * @returns {string} 相对时间描述
  */
-export const formatRelativeTime = (isoString) => {
+export const formatRelativeTime = (isoString, currentTime = null) => {
     if (!isoString) return '从未更新';
     const date = new Date(isoString);
-    const now = new Date();
+    const now = currentTime || new Date();
     const diff = Math.floor((now - date) / 1000);
 
     if (diff < 0) return '刚刚更新';

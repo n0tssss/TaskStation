@@ -159,8 +159,13 @@
                             <span class="stats-percent">{{ calculatePercent(task.current, task.total) }}%</span>
                         </div>
                         <div class="task-times">
-                            <span>创建于 {{ smartTimeFormat(task.createdAt) }}</span>
-                            <span>{{ formatRelativeTime(task.updatedAt) }}</span>
+                            <span>创建于 {{ smartTimeFormat(task.createdAt, true) }}</span>
+                            <span>{{ formatRelativeTime(task.updatedAt, currentTime) }}</span>
+                        </div>
+                        
+                        <!-- 更新动画 -->
+                        <div class="update-animation" v-if="hasUpdate(task.name)">
+                            <span class="update-plus">+1</span>
                         </div>
                     </div>
                 </div>

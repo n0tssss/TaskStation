@@ -70,8 +70,15 @@ createApp({
         const subscribedTasks = ref([]);
         const lastTaskStates = ref({});
         const renderedTaskNames = ref(new Set());
+        
+        // 实时时间（用于相对时间实时更新）
+        const currentTime = ref(new Date());
+        
+        // 更新动画状态（记录哪些任务刚刚更新了）
+        const updatedTasks = ref(new Set());
 
-        let updateInterval = null;
+        let updateTimeout = null;
+        let timeInterval = null;
 
         // 计算属性：排序后的任务列表
         const sortedTasks = computed(() => {
@@ -100,11 +107,18 @@ createApp({
 
             loadUserData();
             await loadConfig();
-            fetchTasks();
-
+            
+            // 根据配置决定是否自动刷新
             if (config.value.autoRefresh.enabled) {
-                startAutoRefresh();
+                startAutoRefresh(); // 这会立即执行 fetchTasks 并启动循环
+            } else {
+                fetchTasks(); // 只执行一次
             }
+            
+            // 每秒更新当前时间（用于相对时间实时显示）
+            timeInterval = setInterval(() => {
+                currentTime.value = new Date();
+            }, 1000);
         });
 
         // 方法定义
@@ -147,8 +161,9 @@ createApp({
 
         /**
          * 获取任务列表
+         * @param {boolean} scheduleNext 是否在完成后安排下一次请求
          */
-        const fetchTasks = async () => {
+        const fetchTasks = async (scheduleNext = false) => {
             try {
                 const newTasks = await ApiService.getTasks();
 
@@ -164,6 +179,13 @@ createApp({
                 }
             } catch (error) {
                 console.error("获取任务失败:", error);
+            } finally {
+                // 请求完成后，安排下一次请求
+                if (scheduleNext && config.value.autoRefresh.enabled) {
+                    updateTimeout = setTimeout(() => {
+                        fetchTasks(true);
+                    }, config.value.autoRefresh.interval || 1000);
+                }
             }
         };
         
@@ -212,20 +234,20 @@ createApp({
         };
 
         /**
-         * 开启自动刷新
+         * 开启自动刷新（请求完成后延迟再发起下一次）
          */
         const startAutoRefresh = () => {
-            if (updateInterval) clearInterval(updateInterval);
-            updateInterval = setInterval(fetchTasks, config.value.autoRefresh.interval || 1000);
+            stopAutoRefresh(); // 先清除现有的
+            fetchTasks(true); // 立即执行一次，并启动循环
         };
 
         /**
          * 停止自动刷新
          */
         const stopAutoRefresh = () => {
-            if (updateInterval) {
-                clearInterval(updateInterval);
-                updateInterval = null;
+            if (updateTimeout) {
+                clearTimeout(updateTimeout);
+                updateTimeout = null;
             }
         };
 
@@ -250,6 +272,14 @@ createApp({
                 if (lastState) {
                     const isCompleted = task.current >= task.total;
                     const wasCompleted = lastState.current >= lastState.total;
+                    
+                    // 检测是否有更新（updatedAt 变化）
+                    const hasUpdate = lastState.updatedAt !== task.updatedAt;
+                    
+                    if (hasUpdate) {
+                        // 触发 +1 更新动画
+                        triggerUpdateAnimation(task.name);
+                    }
 
                     if (isCompleted && !wasCompleted) {
                         triggerConfetti();
@@ -272,6 +302,22 @@ createApp({
                 };
             });
         };
+        
+        /**
+         * 触发更新动画
+         */
+        const triggerUpdateAnimation = (taskName) => {
+            updatedTasks.value.add(taskName);
+            // 动画结束后移除标记
+            setTimeout(() => {
+                updatedTasks.value.delete(taskName);
+            }, 1000);
+        };
+        
+        /**
+         * 检查任务是否刚刚更新（用于显示动画）
+         */
+        const hasUpdate = (name) => updatedTasks.value.has(name);
 
         // UI 辅助函数
         const getStatusClass = (task) => {
@@ -416,6 +462,7 @@ createApp({
             sortedTasks,
             currentTask,
             sortedLogs,
+            currentTime,
             
             // 日志分页状态
             logPage,
@@ -439,6 +486,7 @@ createApp({
             isPinned,
             isSubscribed,
             isNew,
+            hasUpdate,
             smartTimeFormat,
             formatRelativeTime,
 
