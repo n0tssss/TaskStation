@@ -31,6 +31,15 @@ createApp({
 
         // 当前选中任务
         const currentTask = ref(null);
+        
+        // 分页状态
+        const currentPage = ref(1);
+        const pagination = ref({
+            page: 1,
+            pageSize: 100,
+            total: 0,
+            totalPages: 0
+        });
 
         // 编辑表单
         const editForm = ref({
@@ -136,11 +145,15 @@ createApp({
         };
 
         /**
-         * 获取任务列表
+         * 获取任务列表（分页）
+         * @param {number} page 可选，指定页码
          */
-        const fetchTasks = async () => {
+        const fetchTasks = async (page = currentPage.value) => {
             try {
-                const newTasks = await ApiService.getTasks();
+                const result = await ApiService.getTasks(page, 100);
+                const newTasks = result.data;
+                pagination.value = result.pagination;
+                currentPage.value = result.pagination.page;
 
                 if (JSON.stringify(newTasks) !== JSON.stringify(tasks.value)) {
                     checkTaskUpdates(newTasks);
@@ -154,6 +167,34 @@ createApp({
                 }
             } catch (error) {
                 console.error("获取任务失败:", error);
+            }
+        };
+        
+        /**
+         * 跳转到指定页
+         */
+        const goToPage = (page) => {
+            if (page >= 1 && page <= pagination.value.totalPages) {
+                currentPage.value = page;
+                fetchTasks(page);
+            }
+        };
+        
+        /**
+         * 上一页
+         */
+        const prevPage = () => {
+            if (currentPage.value > 1) {
+                goToPage(currentPage.value - 1);
+            }
+        };
+        
+        /**
+         * 下一页
+         */
+        const nextPage = () => {
+            if (currentPage.value < pagination.value.totalPages) {
+                goToPage(currentPage.value + 1);
             }
         };
 
@@ -355,6 +396,10 @@ createApp({
             sortedTasks,
             currentTask,
             sortedLogs,
+            
+            // 分页状态
+            currentPage,
+            pagination,
 
             // 弹窗状态
             showDetailModal,
@@ -392,7 +437,12 @@ createApp({
 
             confirmPassword,
             closePasswordModal,
-            toggleAutoRefresh
+            toggleAutoRefresh,
+            
+            // 分页动作
+            goToPage,
+            prevPage,
+            nextPage
         };
     }
 }).mount("#app");

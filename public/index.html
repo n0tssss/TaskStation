@@ -164,6 +164,36 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- 分页组件 -->
+                <div class="pagination-container" v-if="pagination.totalPages > 1">
+                    <div class="pagination">
+                        <button 
+                            class="pagination-btn" 
+                            @click="prevPage" 
+                            :disabled="currentPage <= 1"
+                            title="上一页">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        
+                        <span class="pagination-info">
+                            第 <strong>{{ currentPage }}</strong> / {{ pagination.totalPages }} 页
+                            <span class="pagination-total">（共 {{ pagination.total }} 条）</span>
+                        </span>
+                        
+                        <button 
+                            class="pagination-btn" 
+                            @click="nextPage" 
+                            :disabled="currentPage >= pagination.totalPages"
+                            title="下一页">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </main>
 
             <footer class="container" v-if="!embedMode">

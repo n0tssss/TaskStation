@@ -22,17 +22,36 @@ const authMiddleware = (req, res, next) => {
 };
 
 /**
- * API: 获取所有任务列表
+ * API: 获取任务列表（支持分页）
  * 不需要密码，公开查询
+ * Query参数: page (默认1), pageSize (默认100)
  */
 app.get("/api/tasks", (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const pageSize = Math.max(1, Math.min(500, parseInt(req.query.pageSize) || 100));
+    
     const tasks = dataManager.getTasks();
     // 转换为数组返回，方便前端处理
     const taskList = Object.values(tasks).sort((a, b) => {
         // 按更新时间倒序排列
         return new Date(b.updatedAt) - new Date(a.updatedAt);
     });
-    res.json(taskList);
+    
+    const total = taskList.length;
+    const totalPages = Math.ceil(total / pageSize);
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedList = taskList.slice(startIndex, endIndex);
+    
+    res.json({
+        data: paginatedList,
+        pagination: {
+            page,
+            pageSize,
+            total,
+            totalPages
+        }
+    });
 });
 
 /**

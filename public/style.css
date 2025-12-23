@@ -797,4 +797,80 @@ input:checked + .slider:before {
         text-align: left;
         font-size: 0.8rem;
     }
+    
+    /* 分页组件移动端适配 */
+    .pagination-container {
+        padding: 15px 0;
+    }
+    
+    .pagination {
+        gap: 10px;
+    }
+    
+    .pagination-total {
+        display: none;
+    }
+}
+
+/* 
+   ============================
+   分页组件样式
+   ============================
+*/
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    padding: 30px 0;
+    margin-top: 10px;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--card-bg);
+    padding: 12px 24px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.pagination-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.pagination-info strong {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.pagination-total {
+    color: #95a5a6;
+    font-size: 0.85rem;
 }
