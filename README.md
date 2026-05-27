@@ -44,21 +44,143 @@ npm start
 
 TaskStation 提供了一套简单的 RESTful API，你可以通过脚本或其他程序调用 API 来更新任务进度。
 
+### 任务状态说明
+
+每个任务都有一个 `state` 字段，表示任务的当前状态。对接时请根据业务场景设置正确的状态：
+
+| 状态值 | 含义 | 适用场景 | 前端表现 |
+|--------|------|----------|----------|
+| `info` | 正常运行 | 任务按预期进行中，没有异常 | 蓝色进度条，默认状态 |
+| `success` | 已完成 | 任务顺利结束，当前进度达到总量 | 绿色进度条 + 礼花特效 |
+| `warning` | 警告 | 任务出现了值得关注但不致命的问题 | 黄色进度条 |
+| `error` | 异常 | 任务发生错误，需要人工介入处理 | 红色脉冲边框 + ⚠️ 异常标识覆盖层 |
+
+**异常判定逻辑**：对于下游对接方，如果你需要标记一个任务发生异常，在调用创建/更新接口时将 `state` 设为 `"error"`，前端会自动高亮显示该任务卡片，提醒相关人员关注。
+
+### 日志级别
+
+日志记录 (`logs` 数组中的每条记录) 也有 `level` 字段，与任务状态对应：
+
+- `info` — 普通日志，蓝色左边框
+- `success` — 成功日志，绿色左边框
+- `warning` — 警告日志，黄色左边框
+- `error` — 错误日志，红色左边框，字体加粗
+
+> **建议**：当任务异常时，将任务的 `state` 设为 `error`，同时写入一条 `level` 为 `error` 的日志描述具体错误原因。
+
 ### 获取任务
 
 *   **GET** `/api/tasks`：获取所有任务列表。
+    *   响应：`[{ name, total, current, state, logs, createdAt, updatedAt, totalLogs }, ...]`
+    *   注意：`logs` 字段只返回最近 10 条，完整日志通过分页接口获取
+
 *   **GET** `/api/task/:name`：获取指定名称的任务详情。
+    *   响应：`{ name, total, current, state, logs, createdAt, updatedAt }`
+
+*   **GET** `/api/task/:name/logs?page=1&pageSize=100`：获取任务日志（分页）。
+    *   响应：`{ data: [...], pagination: { page, pageSize, total, totalPages } }`
+    *   日志按时间倒序（最新的在前），pageSize 最大 500
 
 ### 管理任务 (需要鉴权)
 
 所有管理接口需要在 Body 或 Header 中携带 `password`。
 
 *   **POST** `/api/task`：创建或更新任务。
-    *   Body: `{ "name": "任务名", "total": 100, "current": 50, "log": "日志内容", "password": "..." }`
+    *   Body：
+        ```json
+        {
+          "name": "任务名",
+          "total": 100,
+          "current": 50,
+          "state": "info",
+          "log": "日志内容",
+          "password": "..."
+        }
+        ```
+    *   | 字段 | 必填 | 说明 |
+        |------|------|------|
+        | `name` | 是 | 任务名称，唯一标识 |
+        | `total` | 新任务时必填 | 总进度数量。已有任务可传入以修改总量 |
+        | `current` | 否 | 当前进度。不传则自动 +1 |
+        | `state` | 否 | 任务状态：`info`(默认) / `success` / `warning` / `error` |
+        | `log` | 否 | 本次更新的日志内容 |
+        | `password` | 是 | 管理员密码（也可放在 Header: `x-password`） |
+
 *   **DELETE** `/api/task/:name`：删除指定任务。
     *   Header: `x-password: ...`
+
 *   **DELETE** `/api/tasks`：清空所有任务。
     *   Header: `x-password: ...`
+
+### 对接示例
+
+**Python 对接**：
+```python
+import requests
+
+BASE = "http://localhost:3000/api"
+PASSWORD = "secure_task_password"
+
+# 创建新任务
+requests.post(f"{BASE}/task", json={
+    "name": "数据同步",
+    "total": 1000,
+    "current": 0,
+    "state": "info",
+    "log": "开始同步",
+    "password": PASSWORD
+})
+
+# 更新进度（自动 +1）
+requests.post(f"{BASE}/task", json={
+    "name": "数据同步",
+    "password": PASSWORD
+})
+
+# 标记异常
+requests.post(f"{BASE}/task", json={
+    "name": "数据同步",
+    "state": "error",
+    "log": "数据库连接超时，同步中断",
+    "password": PASSWORD
+})
+
+# 恢复正常
+requests.post(f"{BASE}/task", json={
+    "name": "数据同步",
+    "state": "info",
+    "log": "数据库重连成功，恢复同步",
+    "password": PASSWORD
+})
+
+# 修改总数量（如需求变更）
+requests.post(f"{BASE}/task", json={
+    "name": "数据同步",
+    "total": 1500,
+    "password": PASSWORD
+})
+```
+
+**Shell 对接**：
+```bash
+PASSWORD="secure_task_password"
+BASE="http://localhost:3000/api"
+
+# 自动推进进度 +1
+curl -X POST "$BASE/task" \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"数据同步\",\"password\":\"$PASSWORD\"}"
+
+# 标记异常
+curl -X POST "$BASE/task" \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"数据同步\",\"state\":\"error\",\"log\":\"处理失败\",\"password\":\"$PASSWORD\"}"
+
+# 修改总数量
+curl -X POST "$BASE/task" \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"数据同步\",\"total\":2000,\"password\":\"$PASSWORD\"}"
+```
 
 ## 🛠️ 嵌入模式
 

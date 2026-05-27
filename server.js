@@ -101,8 +101,10 @@ app.post("/api/task", authMiddleware, (req, res) => {
     const existingTask = dataManager.getTaskByName(name);
 
     if (existingTask) {
-        // 任务已存在：忽略传入的 total，强制使用现有 total
-        total = existingTask.total;
+        // 任务已存在：如果未传入 total，沿用现有 total；传入则使用新值
+        if (total === undefined) {
+            total = existingTask.total;
+        }
 
         // 如果未传入 current，则自动 +1
         if (current === undefined) {
