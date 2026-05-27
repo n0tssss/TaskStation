@@ -83,11 +83,6 @@
                         class="task-card"
                         :class="[getStatusClass(task), isPinned(task.name) ? 'pinned' : '', isNew(task.name) ? 'new-task' : '']"
                         @click="openTaskDetail(task)">
-                        <div v-if="task.state === 'error'" class="error-overlay">
-                            <div class="error-icon">⚠️</div>
-                            <div class="error-text">异常！点击查看</div>
-                        </div>
-
                         <div class="task-actions" @click.stop v-if="!embedMode">
                             <button
                                 class="action-btn"
@@ -148,6 +143,8 @@
                         </div>
                         <div class="task-header">
                             <h3 class="task-title">{{ task.name }}</h3>
+                            <span v-if="task.state === 'error'" class="error-badge">异常</span>
+                            <span v-else-if="task.state === 'warning'" class="warning-badge">警告</span>
                         </div>
                         <div class="progress-bar-bg">
                             <div
